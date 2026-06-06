@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Élara Boutique</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── LIGHT THEME (default) ── */
+  :root {
+    --bg:        #ffffff;
+    --bg-off:    #faf9f7;
+    --bg-surf:   #f4f2ee;
+    --bg-card:   #ffffff;
+    --border:    #e0dbd3;
+    --border-md: #c8c2b8;
+    --gold:      #b8913a;
+    --gold-h:    #8a6d2a;
+    --gold-dim:  #8a6d2a;
+    --text:      #1a1714;
+    --muted:     #6b6560;
+    --subtle:    #a09888;
+    --nav-bg:    rgba(255,255,255,0.96);
+    --hero-bg:   #faf9f7;
+    --promo-bg:  #f4f2ee;
+    --drawer-bg: #ffffff;
+    --input-bg:  #faf9f7;
+    --summary-bg:#faf9f7;
+    --footer-bg: #1a1714;
+    --footer-txt:#e8dcc8;
+    --footer-muted:#6b6560;
+    --footer-chip-bg:#2e2a24;
+    --footer-chip-border:#3e3a34;
+    --footer-copy:#4a4640;
+    --toast-bg:  #1a1714;
+    --toast-txt: #e8dcc8;
+    --overlay-add:#1a1714;
+    --overlay-add-txt:#ffffff;
+    --cat-hover: #faf9f7;
+    --grid-gap:  #e0dbd3;
+    --btn-view-bg:rgba(255,255,255,0.92);
+    --btn-view-txt:#1a1714;
+    --card-wish-bg:rgba(255,255,255,0.85);
+    --hero-line-op:0.06;
+    --hero-line-clr:#b8913a;
+  }
+
+  /* ── DARK THEME ── */
+  body.dark {
+    --bg:        #0a0a0a;
+    --bg-off:    #111111;
+    --bg-surf:   #1a1a1a;
+    --bg-card:   #0a0a0a;
+    --border:    #1e1e1e;
+    --border-md: #2e2e2e;
+    --gold:      #c9a84c;
+    --gold-h:    #e8c97e;
+    --gold-dim:  #7a6330;
+    --text:      #f0ece4;
+    --muted:     #8a8478;
+    --subtle:    #5a5450;
+    --nav-bg:    rgba(10,10,10,0.95);
+    --hero-bg:   #0a0a0a;
+    --promo-bg:  #0f0f0f;
+    --drawer-bg: #111111;
+    --input-bg:  #1a1a1a;
+    --summary-bg:#0f0f0f;
+    --footer-bg: #050505;
+    --footer-txt:#e8dcc8;
+    --footer-muted:#5a5450;
+    --footer-chip-bg:#1a1a1a;
+    --footer-chip-border:#2a2a2a;
+    --footer-copy:#3a3a3a;
+    --toast-bg:  #c9a84c;
+    --toast-txt: #0a0a0a;
+    --overlay-add:#c9a84c;
+    --overlay-add-txt:#0a0a0a;
+    --cat-hover: #141414;
+    --grid-gap:  #1a1a1a;
+    --btn-view-bg:rgba(10,10,10,0.9);
+    --btn-view-txt:#f0ece4;
+    --card-wish-bg:rgba(10,10,10,0.7);
+    --hero-line-op:0.04;
+    --hero-line-clr:#c9a84c;
+  }
+
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'Jost', sans-serif; font-weight: 300; overflow-x: hidden; transition: background 0.3s, color 0.3s; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-surf); }
+  ::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 3px; }
+  * { scrollbar-width: thin; scrollbar-color: var(--gold-dim) var(--bg-surf); }
+  input, textarea, select { font-family: 'Jost', sans-serif; }
+  button { cursor: pointer; font-family: 'Jost', sans-serif; }
+  a { color: inherit; text-decoration: none; }
+
+  /* ── THEME TOGGLE BUTTON ── */
+  .theme-toggle {
+    background: none; border: 1px solid var(--border-md); color: var(--muted);
+    width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; transition: all 0.25s; position: relative; overflow: hidden;
+  }
+  .theme-toggle:hover { border-color: var(--gold); color: var(--gold); transform: rotate(20deg); }
+  .theme-toggle svg { transition: transform 0.35s, opacity 0.25s; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useContext, createContext } = React;
+
+/* ─── CART STORE ─── */
+const CartContext = createContext(null);
+const useCart = () => useContext(CartContext);
+
+function CartProvider({ children }) {
+  const [cart, setCart] = useState(() => { try { return JSON.parse(localStorage.getItem('elara_cart')||'[]'); } catch { return []; } });
+  const [wishlist, setWishlist] = useState(() => { try { return JSON.parse(localStorage.getItem('elara_wish')||'[]'); } catch { return []; } });
+  useEffect(() => { localStorage.setItem('elara_cart', JSON.stringify(cart)); }, [cart]);
+  useEffect(() => { localStorage.setItem('elara_wish', JSON.stringify(wishlist)); }, [wishlist]);
+  const addToCart = (product, size, qty=1) => setCart(prev => {
+    const key=`${product.id}-${size}`, ex=prev.find(i=>i.key===key);
+    return ex ? prev.map(i=>i.key===key?{...i,qty:i.qty+qty}:i) : [...prev,{...product,size,qty,key}];
+  });
+  const removeFromCart = key => setCart(prev=>prev.filter(i=>i.key!==key));
+  const updateQty = (key,qty) => { if(qty<1){removeFromCart(key);return;} setCart(prev=>prev.map(i=>i.key===key?{...i,qty}:i)); };
+  const clearCart = () => setCart([]);
+  const toggleWish = id => setWishlist(prev=>prev.includes(id)?prev.filter(x=>x!==id):[...prev,id]);
+  const isWished = id => wishlist.includes(id);
+  const cartTotal = cart.reduce((s,i)=>s+i.price*i.qty,0);
+  const cartCount = cart.reduce((s,i)=>s+i.qty,0);
+  return <CartContext.Provider value={{cart,addToCart,removeFromCart,updateQty,clearCart,wishlist,toggleWish,isWished,cartTotal,cartCount}}>{children}</CartContext.Provider>;
+}
+
+/* ─── DATA ─── */
+const CATEGORIES = ['All','Dresses','Tops','Bottoms','Outerwear','Accessories'];
+const PRODUCTS = [
+  {id:1,name:'Noir Velvet Slip Dress',category:'Dresses',price:285,originalPrice:null,badge:'New',sizes:['XS','S','M','L'],rating:4.8,reviews:24,desc:'A sultry velvet slip dress with a bias-cut silhouette. Features adjustable satin straps and a delicate lace trim.',img:'dress1'},
+  {id:2,name:'Ivory Silk Midi',category:'Dresses',price:340,originalPrice:420,badge:'Sale',sizes:['XS','S','M','L','XL'],rating:4.9,reviews:31,desc:'Pure silk midi dress with a flowing A-line cut. Subtle sheen catches the light beautifully.',img:'dress2'},
+  {id:3,name:'Gold Drape Gown',category:'Dresses',price:580,originalPrice:null,badge:'Exclusive',sizes:['XS','S','M','L'],rating:5.0,reviews:12,desc:'Show-stopping draped gown in champagne gold. Perfect for black-tie events.',img:'dress3'},
+  {id:4,name:'Cashmere Wrap Top',category:'Tops',price:195,originalPrice:null,badge:null,sizes:['XS','S','M','L','XL'],rating:4.7,reviews:18,desc:'Luxuriously soft cashmere wrap top in a warm camel tone. Versatile and timeless.',img:'top1'},
+  {id:5,name:'Silk Camisole',category:'Tops',price:120,originalPrice:150,badge:'Sale',sizes:['XS','S','M','L'],rating:4.6,reviews:42,desc:'Pure silk camisole with delicate lace trim. A wardrobe essential.',img:'top2'},
+  {id:6,name:'Sheer Organza Blouse',category:'Tops',price:165,originalPrice:null,badge:'New',sizes:['XS','S','M','L'],rating:4.5,reviews:9,desc:'Ethereal organza blouse with pearl button closure. Floaty and romantic.',img:'top3'},
+  {id:7,name:'Wide-Leg Crepe Trousers',category:'Bottoms',price:210,originalPrice:null,badge:null,sizes:['XS','S','M','L','XL'],rating:4.8,reviews:27,desc:'Elevated wide-leg trousers in fluid crepe. High-waisted with a draped front.',img:'btm1'},
+  {id:8,name:'Satin Midi Skirt',category:'Bottoms',price:175,originalPrice:220,badge:'Sale',sizes:['XS','S','M','L'],rating:4.7,reviews:33,desc:'Liquid satin midi skirt with a side slit. Rich chocolate hue.',img:'btm2'},
+  {id:9,name:'Wool Tailored Blazer',category:'Outerwear',price:395,originalPrice:null,badge:'New',sizes:['XS','S','M','L'],rating:4.9,reviews:15,desc:'Sharp wool blazer with gold-tone buttons. A power piece for any wardrobe.',img:'out1'},
+  {id:10,name:'Faux Fur Coat',category:'Outerwear',price:485,originalPrice:600,badge:'Sale',sizes:['XS','S','M','L','XL'],rating:4.8,reviews:22,desc:'Opulent faux fur coat in champagne. Statement luxury without compromise.',img:'out2'},
+  {id:11,name:'Gold Chain Necklace',category:'Accessories',price:95,originalPrice:null,badge:null,sizes:['One Size'],rating:4.9,reviews:58,desc:'Chunky 18k gold-plated chain necklace. Makes every outfit.',img:'acc1'},
+  {id:12,name:'Leather Clutch',category:'Accessories',price:145,originalPrice:null,badge:'New',sizes:['One Size'],rating:4.7,reviews:19,desc:'Structured Italian leather clutch with a gold clasp closure.',img:'acc2'},
+];
+
+/* ─── ICONS ─── */
+const SunIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+    <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+  </svg>
+);
+const MoonIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+  </svg>
+);
+const Icon = {
+  bag: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>,
+  heart: (f) => <svg width="18" height="18" viewBox="0 0 24 24" fill={f?'currentColor':'none'} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
+  search: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  close: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  star: <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
+  chevronR: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>,
+  check: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  trash: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>,
+  plus: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  minus: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  truck: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>,
+  arrow: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>,
+};
+
+/* ─── PRODUCT VISUAL ─── */
+function ProductVisual({ product, size='normal' }) {
+  const s = size==='large'?220:180;
+  const palettes = {
+    dress1:{bg:['#2c2c3e','#1e2040'],fg:'rgba(255,255,255,0.18)',acc:'rgba(201,168,76,0.6)'},
+    dress2:{bg:['#f5f0e8','#e8dcc8'],fg:'rgba(120,100,70,0.2)',acc:'rgba(184,145,58,0.5)'},
+    dress3:{bg:['#c9a84c','#a07830'],fg:'rgba(255,255,255,0.22)',acc:'rgba(255,255,255,0.5)'},
+    top1:{bg:['#8b7355','#6b5a3e'],fg:'rgba(255,255,255,0.18)',acc:'rgba(232,201,126,0.5)'},
+    top2:{bg:['#e8c97e','#c9a84c'],fg:'rgba(255,255,255,0.25)',acc:'rgba(255,255,255,0.5)'},
+    top3:{bg:['#ede8e0','#d8d0c0'],fg:'rgba(100,90,70,0.18)',acc:'rgba(184,145,58,0.4)'},
+    btm1:{bg:['#2a2a2a','#3c3c3c'],fg:'rgba(255,255,255,0.18)',acc:'rgba(201,168,76,0.5)'},
+    btm2:{bg:['#5c4030','#3a2820'],fg:'rgba(255,255,255,0.2)',acc:'rgba(201,168,76,0.5)'},
+    out1:{bg:['#1e1e1e','#2e2e2e'],fg:'rgba(255,255,255,0.18)',acc:'rgba(201,168,76,0.6)'},
+    out2:{bg:['#d4a84c','#b88c30'],fg:'rgba(255,255,255,0.22)',acc:'rgba(255,255,255,0.5)'},
+    acc1:{bg:['#c9a84c','#e8c97e'],fg:'rgba(255,255,255,0.3)',acc:'rgba(255,255,255,0.6)'},
+    acc2:{bg:['#2a2a2a','#3a3a3a'],fg:'rgba(255,255,255,0.18)',acc:'rgba(201,168,76,0.6)'},
+  };
+  const p = palettes[product.img]||palettes.btm1;
+  const [c1,c2]=p.bg;
+  return (
+    <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`} style={{display:'block'}}>
+      <defs><linearGradient id={`bg-${product.id}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor={c1}/><stop offset="100%" stopColor={c2}/></linearGradient></defs>
+      <rect width={s} height={s} fill={`url(#bg-${product.id})`} rx="2"/>
+      {product.category==='Dresses'&&<g transform={`translate(${s/2},${s/2})`} opacity="0.9"><ellipse cx="0" cy="-55" rx="20" ry="22" fill={p.fg}/><path d="M-28,-28 Q-32,-10 -42,60 L42,60 Q32,-10 28,-28 Q14,-20 0,-20 Q-14,-20 -28,-28Z" fill={p.fg}/><path d="M-28,-28 Q-18,-18 0,-18 Q18,-18 28,-28" fill="none" stroke={p.acc} strokeWidth="1.5"/><line x1="-42" y1="60" x2="42" y2="60" stroke={p.acc} strokeWidth="1"/></g>}
+      {product.category==='Tops'&&<g transform={`translate(${s/2},${s/2})`} opacity="0.9"><ellipse cx="0" cy="-50" rx="18" ry="18" fill={p.fg}/><path d="M-35,-22 L-50,5 L-28,8 L-24,40 L24,40 L28,8 L50,5 L35,-22 Q20,-12 0,-12 Q-20,-12 -35,-22Z" fill={p.fg}/><line x1="-24" y1="40" x2="24" y2="40" stroke={p.acc} strokeWidth="1"/></g>}
+      {product.category==='Bottoms'&&<g transform={`translate(${s/2},${s/2})`} opacity="0.9"><path d="M-38,-55 L38,-55 L42,60 L10,60 L0,10 L-10,60 L-42,60Z" fill={p.fg}/><line x1="-38" y1="-55" x2="38" y2="-55" stroke={p.acc} strokeWidth="1.5"/></g>}
+      {product.category==='Outerwear'&&<g transform={`translate(${s/2},${s/2})`} opacity="0.9"><ellipse cx="0" cy="-52" rx="20" ry="20" fill={p.fg}/><path d="M-40,-24 L-55,10 L-32,15 L-28,65 L28,65 L32,15 L55,10 L40,-24 Q22,-10 0,-10 Q-22,-10 -40,-24Z" fill={p.fg}/><circle cx="0" cy="10" r="3" fill={p.acc}/><circle cx="0" cy="22" r="3" fill={p.acc}/><circle cx="0" cy="34" r="3" fill={p.acc}/></g>}
+      {product.id===11&&<g transform={`translate(${s/2},${s/2})`} opacity="0.9"><circle cx="0" cy="0" r="48" fill="none" stroke={p.acc} strokeWidth="6" strokeDasharray="12 8"/><circle cx="0" cy="0" r="36" fill="none" stroke={p.fg} strokeWidth="3"/></g>}
+      {product.id===12&&<g transform={`translate(${s/2},${s/2})`} opacity="0.9"><rect x="-50" y="-28" width="100" height="56" rx="4" fill={p.fg}/><rect x="-50" y="-28" width="100" height="56" rx="4" fill="none" stroke={p.acc} strokeWidth="1.5"/><rect x="-20" y="-35" width="40" height="14" rx="3" fill={p.acc}/></g>}
+      <line x1="0" y1="12" x2="12" y2="0" stroke="#c9a84c" strokeWidth="1" opacity="0.4"/>
+      <line x1={s} y1={s-12} x2={s-12} y2={s} stroke="#c9a84c" strokeWidth="1" opacity="0.4"/>
+    </svg>
+  );
+}
+
+/* ─── COMPONENT STYLES (CSS vars so they auto-switch) ─── */
+const css = `
+  @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes shimmer{0%,100%{opacity:0.5}50%{opacity:1}}
+  @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  @keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+  .fade-up{animation:fadeUp 0.6s ease both}
+
+  .nav{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--nav-bg);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);transition:background 0.3s,border-color 0.3s}
+  .nav-inner{max-width:1280px;margin:0 auto;padding:0 2rem;height:72px;display:flex;align-items:center;justify-content:space-between;gap:2rem}
+  .logo{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:600;letter-spacing:0.08em;color:var(--text);cursor:pointer;transition:color 0.3s}
+  .logo span{font-weight:300;font-style:italic;color:var(--gold)}
+  .nav-links{display:flex;gap:2rem}
+  .nav-link{font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:color 0.2s;padding:4px 0;border-bottom:1px solid transparent}
+  .nav-link:hover,.nav-link.active{color:var(--text);border-color:var(--gold)}
+  .nav-actions{display:flex;align-items:center;gap:1rem}
+  .icon-btn{background:none;border:none;color:var(--muted);display:flex;align-items:center;gap:6px;padding:6px;border-radius:4px;transition:color 0.2s;position:relative}
+  .icon-btn:hover{color:var(--gold)}
+  .badge{position:absolute;top:-4px;right:-4px;background:var(--gold);color:#fff;font-size:10px;font-weight:500;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+
+  .page{padding-top:72px;min-height:100vh;background:var(--bg);transition:background 0.3s}
+
+  .hero{height:92vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:var(--hero-bg);transition:background 0.3s}
+  .hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 60% 40%,rgba(201,168,76,0.07) 0%,transparent 70%);pointer-events:none}
+  .hero-lines{position:absolute;inset:0;opacity:var(--hero-line-op);background-image:repeating-linear-gradient(0deg,transparent,transparent 59px,var(--hero-line-clr) 59px,var(--hero-line-clr) 60px),repeating-linear-gradient(90deg,transparent,transparent 59px,var(--hero-line-clr) 59px,var(--hero-line-clr) 60px);pointer-events:none;transition:opacity 0.3s}
+  .hero-content{text-align:center;z-index:1;padding:2rem}
+  .hero-eyebrow{font-size:0.7rem;letter-spacing:0.3em;text-transform:uppercase;color:var(--gold);margin-bottom:1.5rem;animation:fadeUp 0.8s 0.1s both}
+  .hero-title{font-family:'Cormorant Garamond',serif;font-size:clamp(3.5rem,8vw,7rem);font-weight:300;line-height:1;color:var(--text);margin-bottom:1.5rem;animation:fadeUp 0.8s 0.2s both;transition:color 0.3s}
+  .hero-title em{color:var(--gold);font-style:italic}
+  .hero-sub{font-size:0.9rem;letter-spacing:0.08em;color:var(--muted);margin-bottom:3rem;animation:fadeUp 0.8s 0.3s both}
+  .hero-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;animation:fadeUp 0.8s 0.4s both}
+  .btn-gold{background:var(--gold);color:#fff;border:none;padding:14px 36px;font-size:0.78rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;font-weight:500;transition:background 0.2s,transform 0.1s}
+  .btn-gold:hover{background:var(--gold-h);transform:translateY(-1px)}
+  .btn-outline{background:none;color:var(--gold);border:1px solid var(--gold);padding:14px 36px;font-size:0.78rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;font-weight:400;transition:all 0.2s}
+  .btn-outline:hover{background:rgba(201,168,76,0.08)}
+  .hero-scroll{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;animation:shimmer 2s infinite}
+  .scroll-line{width:1px;height:40px;background:linear-gradient(to bottom,var(--gold),transparent)}
+  .scroll-text{font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold)}
+
+  .marquee-bar{background:var(--bg-surf);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:10px 0;overflow:hidden;white-space:nowrap;transition:background 0.3s}
+  .marquee-inner{display:inline-block;animation:marquee 22s linear infinite}
+  .marquee-item{display:inline;font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin:0 3rem}
+  .marquee-dot{color:var(--gold);margin:0 0.5rem}
+
+  .section{max-width:1280px;margin:0 auto;padding:5rem 2rem}
+  .section-eyebrow{font-size:0.65rem;letter-spacing:0.3em;text-transform:uppercase;color:var(--gold);margin-bottom:0.75rem}
+  .section-title{font-family:'Cormorant Garamond',serif;font-size:clamp(2rem,4vw,3rem);font-weight:300;color:var(--text);line-height:1.1;transition:color 0.3s}
+  .section-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:3rem;gap:1rem;flex-wrap:wrap}
+  .link-gold{color:var(--gold);font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;gap:6px;transition:gap 0.2s}
+  .link-gold:hover{gap:10px}
+
+  .filters{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:2.5rem}
+  .filter-btn{background:none;border:1px solid var(--border-md);color:var(--muted);padding:8px 20px;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all 0.2s}
+  .filter-btn:hover{border-color:var(--gold);color:var(--gold)}
+  .filter-btn.active{background:var(--gold);border-color:var(--gold);color:#fff}
+
+  .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.5px;background:var(--grid-gap);transition:background 0.3s}
+  .product-card{background:var(--bg-card);position:relative;cursor:pointer;overflow:hidden;transition:background 0.3s}
+  .product-card:hover .card-overlay{opacity:1}
+  .product-card:hover .card-img-wrap{transform:scale(1.03)}
+  .card-img-wrap{transition:transform 0.5s ease;display:flex;align-items:center;justify-content:center;aspect-ratio:3/4;background:var(--bg-surf);position:relative;overflow:hidden;transition:transform 0.5s ease,background 0.3s}
+  .card-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.28);display:flex;align-items:flex-end;justify-content:center;padding-bottom:1.5rem;opacity:0;transition:opacity 0.3s;gap:0.5rem}
+  .card-badge{position:absolute;top:1rem;left:1rem;background:var(--gold);color:#fff;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;padding:4px 10px;font-weight:500}
+  .card-wish{position:absolute;top:1rem;right:1rem;background:var(--card-wish-bg);border:none;color:var(--muted);width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:color 0.2s;border-radius:50%}
+  .card-wish.wished{color:var(--gold)}
+  .card-info{padding:1.25rem 1rem 1.5rem;background:var(--bg-card);transition:background 0.3s}
+  .card-cat{font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:0.4rem}
+  .card-name{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:400;color:var(--text);margin-bottom:0.5rem;line-height:1.2;transition:color 0.3s}
+  .card-price{font-size:0.85rem;color:var(--gold);display:flex;align-items:center;gap:0.5rem}
+  .card-price del{color:var(--subtle);font-size:0.78rem}
+  .card-stars{display:flex;align-items:center;gap:4px;margin-top:0.4rem;color:var(--gold);font-size:0.72rem}
+  .btn-add{background:var(--overlay-add);color:var(--overlay-add-txt);border:none;padding:10px 20px;font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;font-weight:500;transition:all 0.2s;white-space:nowrap}
+  .btn-add:hover{background:var(--gold);color:#fff}
+  .btn-view{background:var(--btn-view-bg);color:var(--btn-view-txt);border:1px solid var(--border-md);padding:10px 16px;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all 0.2s}
+  .btn-view:hover{border-color:var(--gold);color:var(--gold)}
+
+  .cat-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1.5px;background:var(--grid-gap);transition:background 0.3s}
+  .cat-card{background:var(--bg-card);padding:2.5rem 1.5rem;cursor:pointer;transition:background 0.2s;display:flex;flex-direction:column;gap:0.5rem}
+  .cat-card:hover{background:var(--cat-hover)}
+  .cat-card:hover .cat-arrow{color:var(--gold)}
+  .cat-name{font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:400;color:var(--text);transition:color 0.3s}
+  .cat-count{font-size:0.7rem;letter-spacing:0.1em;color:var(--muted)}
+  .cat-arrow{color:var(--border-md);transition:color 0.2s;margin-top:auto}
+
+  .detail-wrap{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:start}
+  .detail-img{background:var(--bg-surf);display:flex;align-items:center;justify-content:center;aspect-ratio:3/4;border:1px solid var(--border);transition:background 0.3s,border-color 0.3s}
+  .detail-title{font-family:'Cormorant Garamond',serif;font-size:clamp(1.8rem,3vw,2.8rem);font-weight:300;color:var(--text);margin-bottom:0.75rem;line-height:1.1;transition:color 0.3s}
+  .detail-price{font-size:1.4rem;color:var(--gold);margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem}
+  .detail-desc{font-size:0.9rem;color:var(--muted);line-height:1.8;margin-bottom:2rem}
+  .size-label{font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem}
+  .size-grid{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:2rem}
+  .size-btn{background:none;border:1px solid var(--border-md);color:var(--muted);padding:10px 16px;font-size:0.75rem;cursor:pointer;transition:all 0.2s;min-width:50px;text-align:center}
+  .size-btn:hover{border-color:var(--gold);color:var(--gold)}
+  .size-btn.selected{background:var(--gold);border-color:var(--gold);color:#fff}
+  .detail-actions{display:flex;gap:0.75rem}
+  .btn-full{flex:1;background:var(--text);color:var(--bg);border:none;padding:16px;font-size:0.78rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;font-weight:500;transition:background 0.2s,color 0.2s}
+  .btn-full:hover{background:var(--gold);color:#fff}
+  .btn-wish-lg{background:none;border:1px solid var(--border-md);color:var(--muted);padding:16px 20px;cursor:pointer;transition:all 0.2s}
+  .btn-wish-lg:hover,.btn-wish-lg.wished{border-color:var(--gold);color:var(--gold)}
+  .detail-meta{margin-top:2rem;border-top:1px solid var(--border);padding-top:1.5rem;display:flex;flex-direction:column;gap:0.75rem}
+  .meta-row{display:flex;align-items:center;gap:0.75rem;font-size:0.8rem;color:var(--muted)}
+  .meta-row svg{color:var(--gold);flex-shrink:0}
+
+  .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;animation:fadeIn 0.2s ease}
+  .drawer{position:fixed;top:0;right:0;width:min(420px,100vw);height:100vh;background:var(--drawer-bg);border-left:1px solid var(--border);z-index:201;display:flex;flex-direction:column;animation:slideIn 0.3s ease;transition:background 0.3s,border-color 0.3s}
+  .drawer-head{padding:1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+  .drawer-title{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:300;color:var(--text)}
+  .drawer-body{flex:1;overflow-y:auto;padding:1rem}
+  .drawer-foot{padding:1.5rem;border-top:1px solid var(--border)}
+  .cart-item{display:grid;grid-template-columns:70px 1fr auto;gap:1rem;padding:1rem 0;border-bottom:1px solid var(--border);align-items:start}
+  .cart-thumb{background:var(--bg-surf);display:flex;align-items:center;justify-content:center;height:90px;transition:background 0.3s}
+  .cart-item-name{font-family:'Cormorant Garamond',serif;font-size:1rem;color:var(--text)}
+  .cart-item-size{font-size:0.7rem;letter-spacing:0.1em;color:var(--muted);margin-top:2px}
+  .cart-item-price{font-size:0.85rem;color:var(--gold);margin-top:4px}
+  .qty-ctrl{display:flex;align-items:center;gap:8px;margin-top:0.75rem}
+  .qty-btn{background:none;border:1px solid var(--border-md);color:var(--muted);width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s}
+  .qty-btn:hover{border-color:var(--gold);color:var(--gold)}
+  .qty-num{font-size:0.85rem;min-width:20px;text-align:center;color:var(--text)}
+  .cart-remove{background:none;border:none;color:var(--border-md);cursor:pointer;padding:4px;transition:color 0.2s}
+  .cart-remove:hover{color:var(--gold)}
+  .cart-total{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+  .total-label{font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)}
+  .total-amount{font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--gold)}
+  .empty-cart{text-align:center;padding:3rem 1rem;color:var(--muted)}
+  .empty-cart-title{font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--text);margin-bottom:0.5rem}
+
+  .checkout-grid{display:grid;grid-template-columns:1fr 380px;gap:3rem;align-items:start}
+  .checkout-section{border:1px solid var(--border);padding:2rem;margin-bottom:1.5rem;transition:border-color 0.3s}
+  .checkout-section-title{font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:var(--text);margin-bottom:1.5rem;display:flex;align-items:center;gap:0.75rem}
+  .checkout-section-title span{width:24px;height:24px;background:var(--gold);color:#fff;font-size:0.7rem;font-weight:500;display:flex;align-items:center;justify-content:center;border-radius:50%}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .form-group{margin-bottom:1rem}
+  .form-label{font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px}
+  .form-input{width:100%;background:var(--input-bg);border:1px solid var(--border-md);color:var(--text);padding:11px 14px;font-size:0.85rem;font-family:'Jost',sans-serif;transition:border-color 0.2s,background 0.3s;outline:none}
+  .form-input:focus{border-color:var(--gold)}
+  .order-summary{background:var(--summary-bg);border:1px solid var(--border);padding:1.5rem;position:sticky;top:90px;transition:background 0.3s,border-color 0.3s}
+  .order-title{font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:var(--text);margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:1rem}
+  .order-item{display:flex;justify-content:space-between;font-size:0.82rem;color:var(--muted);margin-bottom:0.6rem}
+  .order-item strong{color:var(--text)}
+  .order-divider{border:none;border-top:1px solid var(--border);margin:1rem 0}
+  .order-total{display:flex;justify-content:space-between;font-size:1rem;color:var(--gold);font-weight:500}
+
+  .success-wrap{text-align:center;padding:5rem 2rem;max-width:500px;margin:0 auto}
+  .success-icon{width:72px;height:72px;background:rgba(201,168,76,0.12);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 2rem;color:var(--gold);font-size:2rem}
+  .success-title{font-family:'Cormorant Garamond',serif;font-size:2.5rem;font-weight:300;color:var(--text);margin-bottom:1rem}
+  .success-sub{color:var(--muted);line-height:1.7;margin-bottom:2rem}
+  .order-num{font-size:0.75rem;letter-spacing:0.2em;color:var(--gold);background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);padding:8px 20px;display:inline-block;margin-bottom:2rem}
+
+  .footer{background:var(--footer-bg);border-top:1px solid var(--border);transition:background 0.3s}
+  .footer-inner{max-width:1280px;margin:0 auto;padding:4rem 2rem;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem}
+  .footer-logo{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:600;letter-spacing:0.08em;color:var(--footer-txt);margin-bottom:1rem}
+  .footer-about{font-size:0.82rem;color:var(--footer-muted);line-height:1.8}
+  .footer-heading{font-size:0.65rem;letter-spacing:0.25em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem}
+  .footer-links{list-style:none;display:flex;flex-direction:column;gap:0.5rem}
+  .footer-links li{font-size:0.82rem;color:var(--footer-muted);cursor:pointer;transition:color 0.2s}
+  .footer-links li:hover{color:var(--footer-txt)}
+  .footer-bottom{max-width:1280px;margin:0 auto;padding:1.5rem 2rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+  .footer-copy{font-size:0.72rem;color:var(--footer-copy)}
+  .footer-cards{display:flex;gap:0.5rem}
+  .card-chip{background:var(--footer-chip-bg);border:1px solid var(--footer-chip-border);padding:4px 10px;font-size:0.65rem;color:var(--footer-muted);border-radius:3px}
+
+  .toast{position:fixed;bottom:2rem;right:2rem;background:var(--toast-bg);color:var(--toast-txt);padding:1rem 1.5rem;font-size:0.82rem;letter-spacing:0.05em;z-index:300;animation:fadeUp 0.3s ease;display:flex;align-items:center;gap:0.75rem;box-shadow:0 4px 24px rgba(0,0,0,0.15)}
+
+  @media(max-width:768px){
+    .detail-wrap{grid-template-columns:1fr;gap:2rem}
+    .checkout-grid{grid-template-columns:1fr}
+    .footer-inner{grid-template-columns:1fr 1fr}
+    .hero-title{font-size:3rem}
+    .nav-links{display:none}
+  }
+`;
+
+/* ─── TOAST ─── */
+function Toast({ msg, onDone }) {
+  useEffect(() => { const t = setTimeout(onDone, 2400); return () => clearTimeout(t); }, []);
+  return <div className="toast">{Icon.check} {msg}</div>;
+}
+
+/* ─── NAVBAR ─── */
+function Navbar({ page, setPage, openCart, dark, toggleDark }) {
+  const { cartCount } = useCart();
+  return (
+    <nav className="nav">
+      <div className="nav-inner">
+        <div className="logo" onClick={() => setPage('home')}>Él<span>ara</span></div>
+        <div className="nav-links">
+          {['home','shop','about'].map(p => (
+            <span key={p} className={`nav-link ${page===p?'active':''}`} onClick={() => setPage(p)}>
+              {p==='home'?'Home':p==='shop'?'Shop':'About'}
+            </span>
+          ))}
+        </div>
+        <div className="nav-actions">
+          {/* ── THEME TOGGLE ── */}
+          <button className="theme-toggle" onClick={toggleDark} title={dark?'Switch to light mode':'Switch to dark mode'} aria-label="Toggle theme">
+            {dark ? <SunIcon /> : <MoonIcon />}
+          </button>
+          <button className="icon-btn" onClick={() => setPage('shop')} title="Search">{Icon.search}</button>
+          <button className="icon-btn" onClick={() => setPage('shop')} title="Wishlist">{Icon.heart(false)}</button>
+          <button className="icon-btn" onClick={openCart} title="Cart">
+            {Icon.bag}
+            {cartCount > 0 && <span className="badge">{cartCount}</span>}
+          </button>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+/* ─── CART DRAWER ─── */
+function CartDrawer({ open, onClose, setPage }) {
+  const { cart, removeFromCart, updateQty, cartTotal, clearCart } = useCart();
+  if (!open) return null;
+  return (
+    <>
+      <div className="drawer-overlay" onClick={onClose} />
+      <div className="drawer">
+        <div className="drawer-head">
+          <span className="drawer-title">Your Bag ({cart.length})</span>
+          <button className="icon-btn" onClick={onClose}>{Icon.close}</button>
+        </div>
+        <div className="drawer-body">
+          {cart.length === 0 ? (
+            <div className="empty-cart">
+              <div className="empty-cart-title">Your bag is empty</div>
+              <p style={{fontSize:'0.82rem',marginBottom:'1.5rem'}}>Add some pieces to get started.</p>
+              <button className="btn-gold" style={{fontSize:'0.72rem',padding:'12px 28px'}} onClick={onClose}>Continue Shopping</button>
+            </div>
+          ) : cart.map(item => (
+            <div key={item.key} className="cart-item">
+              <div className="cart-thumb"><ProductVisual product={item} size="small" /></div>
+              <div>
+                <div className="cart-item-name">{item.name}</div>
+                <div className="cart-item-size">Size: {item.size}</div>
+                <div className="cart-item-price">GH₵ {(item.price*item.qty).toLocaleString()}</div>
+                <div className="qty-ctrl">
+                  <button className="qty-btn" onClick={() => updateQty(item.key,item.qty-1)}>{Icon.minus}</button>
+                  <span className="qty-num">{item.qty}</span>
+                  <button className="qty-btn" onClick={() => updateQty(item.key,item.qty+1)}>{Icon.plus}</button>
+                </div>
+              </div>
+              <button className="cart-remove" onClick={() => removeFromCart(item.key)}>{Icon.trash}</button>
+            </div>
+          ))}
+        </div>
+        {cart.length > 0 && (
+          <div className="drawer-foot">
+            <div className="cart-total">
+              <span className="total-label">Subtotal</span>
+              <span className="total-amount">GH₵ {cartTotal.toLocaleString()}</span>
+            </div>
+            <button className="btn-gold" style={{width:'100%',padding:'16px',fontSize:'0.78rem',letterSpacing:'0.15em'}}
+              onClick={() => { onClose(); setPage('checkout'); }}>Proceed to Checkout</button>
+            <button style={{width:'100%',marginTop:'0.5rem',background:'none',border:'none',color:'var(--subtle)',fontSize:'0.75rem',padding:'8px',cursor:'pointer'}}
+              onClick={() => { if(window.confirm('Clear bag?')) clearCart(); }}>Clear Bag</button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+/* ─── PRODUCT CARD ─── */
+function ProductCard({ p, onView, onAdd, i=0 }) {
+  const { toggleWish, isWished } = useCart();
+  return (
+    <div className="product-card fade-up" style={{ animationDelay:`${Math.min(i,8)*0.06}s` }}>
+      <div className="card-img-wrap" onClick={() => onView(p)}>
+        <ProductVisual product={p} />
+        {p.badge && <span className="card-badge">{p.badge}</span>}
+        <button className={`card-wish ${isWished(p.id)?'wished':''}`} onClick={e=>{e.stopPropagation();toggleWish(p.id);}}>
+          {Icon.heart(isWished(p.id))}
+        </button>
+        <div className="card-overlay">
+          <button className="btn-view" onClick={e=>{e.stopPropagation();onView(p);}}>View</button>
+          <button className="btn-add" onClick={e=>{e.stopPropagation();onAdd(p);}}>Add to Bag</button>
+        </div>
+      </div>
+      <div className="card-info">
+        <p className="card-cat">{p.category}</p>
+        <p className="card-name">{p.name}</p>
+        <p className="card-price">GH₵ {p.price.toLocaleString()} {p.originalPrice&&<del>GH₵ {p.originalPrice.toLocaleString()}</del>}</p>
+        <div className="card-stars">{Icon.star} {p.rating} <span style={{color:'var(--subtle)'}}>({p.reviews})</span></div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── HOME PAGE ─── */
+function HomePage({ setPage, setProductDetail }) {
+  const { addToCart } = useCart();
+  const [toast, setToast] = useState(null);
+  const featured = PRODUCTS.filter(p=>p.badge==='New'||p.badge==='Exclusive').slice(0,4);
+  const catCounts = CATEGORIES.filter(c=>c!=='All').map(c=>({name:c,count:PRODUCTS.filter(p=>p.category===c).length}));
+  const addItem = p => { addToCart(p,p.sizes[0]); setToast(`${p.name} added to bag`); };
+  const viewItem = p => { setProductDetail(p); setPage('product'); };
+
+  return (
+    <div>
+      <section className="hero">
+        <div className="hero-bg"/><div className="hero-lines"/>
+        <div className="hero-content">
+          <p className="hero-eyebrow">New Collection · Summer 2025</p>
+          <h1 className="hero-title">Dressed in<br/><em>Élara</em></h1>
+          <p className="hero-sub">Luxury Womenswear · Curated for the Modern Woman</p>
+          <div className="hero-btns">
+            <button className="btn-gold" onClick={() => setPage('shop')}>Shop the Collection</button>
+            <button className="btn-outline" onClick={() => setPage('about')}>Our Story</button>
+          </div>
+        </div>
+        <div className="hero-scroll"><div className="scroll-line"/><span className="scroll-text">Scroll</span></div>
+      </section>
+
+      <div className="marquee-bar">
+        <div className="marquee-inner">
+          {Array(8).fill(null).map((_,i)=>(
+            <React.Fragment key={i}>
+              <span className="marquee-item">Free Shipping Over GH₵500</span><span className="marquee-dot">◆</span>
+              <span className="marquee-item">New Arrivals Every Week</span><span className="marquee-dot">◆</span>
+              <span className="marquee-item">Curated Luxury Pieces</span><span className="marquee-dot">◆</span>
+              <span className="marquee-item">Exclusive Members Offer</span><span className="marquee-dot">◆</span>
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+
+      <div className="section" style={{paddingBottom:'2rem'}}>
+        <div className="section-header"><div><p className="section-eyebrow">Browse by</p><h2 className="section-title">Shop Categories</h2></div></div>
+        <div className="cat-strip">
+          {catCounts.map(c=>(
+            <div key={c.name} className="cat-card" onClick={() => setPage('shop')}>
+              <span className="cat-name">{c.name}</span>
+              <span className="cat-count">{c.count} pieces</span>
+              <span className="cat-arrow">{Icon.arrow}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="section">
+        <div className="section-header">
+          <div><p className="section-eyebrow">Curated for you</p><h2 className="section-title">New Arrivals</h2></div>
+          <span className="link-gold" onClick={() => setPage('shop')}>View All {Icon.chevronR}</span>
+        </div>
+        <div className="product-grid">
+          {featured.map((p,i)=><ProductCard key={p.id} p={p} i={i} onView={viewItem} onAdd={addItem}/>)}
+        </div>
+      </div>
+
+      <div style={{background:'var(--promo-bg)',borderTop:'1px solid var(--border)',borderBottom:'1px solid var(--border)',padding:'5rem 2rem',textAlign:'center',transition:'background 0.3s'}}>
+        <p style={{fontSize:'0.65rem',letterSpacing:'0.3em',textTransform:'uppercase',color:'var(--gold)',marginBottom:'1rem'}}>Limited Time</p>
+        <h2 style={{fontFamily:'Cormorant Garamond,serif',fontSize:'clamp(2rem,5vw,3.5rem)',fontWeight:300,color:'var(--text)',marginBottom:'1rem',transition:'color 0.3s'}}>
+          Up to <span style={{color:'var(--gold)'}}>30% Off</span> Selected Pieces
+        </h2>
+        <p style={{color:'var(--muted)',fontSize:'0.85rem',marginBottom:'2rem'}}>Shop our curated sale selection — elevated style at exceptional value.</p>
+        <button className="btn-gold" onClick={() => setPage('shop')}>Shop Sale</button>
+      </div>
+
+      <Footer setPage={setPage}/>
+      {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
+    </div>
+  );
+}
+
+/* ─── SHOP PAGE ─── */
+function ShopPage({ setPage, setProductDetail }) {
+  const { addToCart } = useCart();
+  const [cat, setCat] = useState('All');
+  const [sort, setSort] = useState('newest');
+  const [toast, setToast] = useState(null);
+  let products = cat==='All' ? PRODUCTS : PRODUCTS.filter(p=>p.category===cat);
+  if (sort==='price-asc') products=[...products].sort((a,b)=>a.price-b.price);
+  if (sort==='price-desc') products=[...products].sort((a,b)=>b.price-a.price);
+  if (sort==='rating') products=[...products].sort((a,b)=>b.rating-a.rating);
+  const addItem = p => { addToCart(p,p.sizes[0]); setToast(`${p.name} added to bag`); };
+  const viewItem = p => { setProductDetail(p); setPage('product'); };
+  return (
+    <div className="page">
+      <div className="section" style={{paddingBottom:'1rem'}}>
+        <p className="section-eyebrow">Our collection</p>
+        <div className="section-header">
+          <h1 className="section-title">All Pieces</h1>
+          <select value={sort} onChange={e=>setSort(e.target.value)}
+            style={{background:'var(--input-bg)',border:'1px solid var(--border-md)',color:'var(--muted)',padding:'8px 16px',fontSize:'0.75rem',fontFamily:'Jost,sans-serif',outline:'none',cursor:'pointer',transition:'background 0.3s'}}>
+            <option value="newest">Newest First</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="rating">Highest Rated</option>
+          </select>
+        </div>
+        <div className="filters">
+          {CATEGORIES.map(c=><button key={c} className={`filter-btn ${cat===c?'active':''}`} onClick={()=>setCat(c)}>{c}</button>)}
+        </div>
+      </div>
+      <div style={{maxWidth:'1280px',margin:'0 auto',padding:'0 2rem 5rem'}}>
+        <div className="product-grid">
+          {products.map((p,i)=><ProductCard key={p.id} p={p} i={i} onView={viewItem} onAdd={addItem}/>)}
+        </div>
+      </div>
+      <Footer setPage={setPage}/>
+      {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
+    </div>
+  );
+}
+
+/* ─── PRODUCT DETAIL ─── */
+function ProductPage({ product, setPage, setProductDetail }) {
+  const { addToCart, toggleWish, isWished } = useCart();
+  const [size, setSize] = useState(null);
+  const [toast, setToast] = useState(null);
+  const handleAdd = () => {
+    if (!size && product.sizes.length>1) { setToast('Please select a size'); return; }
+    addToCart(product, size||product.sizes[0]);
+    setToast(`${product.name} added to bag`);
+  };
+  const related = PRODUCTS.filter(p=>p.category===product.category&&p.id!==product.id).slice(0,4);
+  return (
+    <div className="page">
+      <div className="section">
+        <p style={{fontSize:'0.72rem',color:'var(--subtle)',marginBottom:'2rem',cursor:'pointer'}} onClick={() => setPage('shop')}>← Back to Shop</p>
+        <div className="detail-wrap">
+          <div className="detail-img"><ProductVisual product={product} size="large"/></div>
+          <div>
+            <p className="section-eyebrow">{product.category}</p>
+            <h1 className="detail-title">{product.name}</h1>
+            <div className="card-stars" style={{marginBottom:'1rem'}}>{Icon.star} {product.rating} <span style={{color:'var(--subtle)'}}>({product.reviews} reviews)</span></div>
+            <div className="detail-price">GH₵ {product.price.toLocaleString()} {product.originalPrice&&<del style={{color:'var(--subtle)',fontSize:'1rem'}}>GH₵ {product.originalPrice.toLocaleString()}</del>}</div>
+            <p className="detail-desc">{product.desc}</p>
+            {product.sizes.length>1&&<>
+              <p className="size-label">Select Size</p>
+              <div className="size-grid">{product.sizes.map(s=><button key={s} className={`size-btn ${size===s?'selected':''}`} onClick={()=>setSize(s)}>{s}</button>)}</div>
+            </>}
+            <div className="detail-actions">
+              <button className="btn-full" onClick={handleAdd}>Add to Bag</button>
+              <button className={`btn-wish-lg ${isWished(product.id)?'wished':''}`} onClick={() => toggleWish(product.id)}>{Icon.heart(isWished(product.id))}</button>
+            </div>
+            <div className="detail-meta">
+              <div className="meta-row">{Icon.truck} Free shipping on orders over GH₵ 500</div>
+              <div className="meta-row">{Icon.check} Free returns within 14 days</div>
+            </div>
+          </div>
+        </div>
+        {related.length>0&&<div style={{marginTop:'5rem'}}>
+          <div className="section-header"><div><p className="section-eyebrow">You may also like</p><h2 className="section-title">Related Pieces</h2></div></div>
+          <div className="product-grid">
+            {related.map(p=>(
+              <div key={p.id} className="product-card" onClick={() => { setProductDetail(p); window.scrollTo(0,0); }}>
+                <div className="card-img-wrap"><ProductVisual product={p}/>{p.badge&&<span className="card-badge">{p.badge}</span>}</div>
+                <div className="card-info"><p className="card-cat">{p.category}</p><p className="card-name">{p.name}</p><p className="card-price">GH₵ {p.price.toLocaleString()}</p></div>
+              </div>
+            ))}
+          </div>
+        </div>}
+      </div>
+      <Footer setPage={setPage}/>
+      {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
+    </div>
+  );
+}
+
+/* ─── CHECKOUT ─── */
+function CheckoutPage({ setPage }) {
+  const { cart, cartTotal, clearCart } = useCart();
+  const [placed, setPlaced] = useState(false);
+  const [form, setForm] = useState({fname:'',lname:'',email:'',phone:'',address:'',city:'',region:'Ghana',card:'',expiry:'',cvv:''});
+  const upd = (k,v) => setForm(f=>({...f,[k]:v}));
+  const handleOrder = () => {
+    if (['fname','lname','email','address','city','card'].some(k=>!form[k].trim())) { alert('Please fill in all required fields.'); return; }
+    clearCart(); setPlaced(true);
+  };
+  if (placed) return (
+    <div className="page"><div className="success-wrap">
+      <div className="success-icon">✓</div>
+      <h1 className="success-title">Order Placed!</h1>
+      <p className="success-sub">Thank you for shopping with Élara Boutique. You will receive a confirmation email shortly.</p>
+      <div className="order-num">Order #EL-{Math.floor(Math.random()*90000+10000)}</div><br/>
+      <button className="btn-gold" onClick={() => setPage('home')}>Return Home</button>
+    </div></div>
+  );
+  if (cart.length===0) return (
+    <div className="page"><div className="success-wrap">
+      <h2 style={{fontFamily:'Cormorant Garamond,serif',fontSize:'2rem',color:'var(--text)',marginBottom:'1rem'}}>Your bag is empty</h2>
+      <button className="btn-gold" onClick={() => setPage('shop')}>Continue Shopping</button>
+    </div></div>
+  );
+  return (
+    <div className="page"><div className="section">
+      <p className="section-eyebrow">Secure Checkout</p>
+      <h1 className="section-title" style={{marginBottom:'2.5rem'}}>Complete Your Order</h1>
+      <div className="checkout-grid">
+        <div>
+          {[
+            {n:1,t:'Contact Information',fields:[
+              [{k:'fname',l:'First Name *',ph:'Ama'},{k:'lname',l:'Last Name *',ph:'Mensah'}],
+              [{k:'email',l:'Email *',ph:'ama@example.com',type:'email'},{k:'phone',l:'Phone',ph:'+233 ...'}],
+            ]},
+            {n:2,t:'Delivery Address',fields:[
+              [{k:'address',l:'Street Address *',ph:'123 Oxford Street',full:true}],
+              [{k:'city',l:'City *',ph:'Accra'},{k:'region',l:'Region',ph:''}],
+            ]},
+          ].map(sec=>(
+            <div key={sec.n} className="checkout-section">
+              <h3 className="checkout-section-title"><span>{sec.n}</span> {sec.t}</h3>
+              {sec.fields.map((row,ri)=>(
+                <div key={ri} className={row[0].full?'form-group':'form-row'}>
+                  {row.map(f=>(
+                    <div key={f.k} className="form-group">
+                      <label className="form-label">{f.l}</label>
+                      <input className="form-input" type={f.type||'text'} value={form[f.k]} onChange={e=>upd(f.k,e.target.value)} placeholder={f.ph}/>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ))}
+          <div className="checkout-section">
+            <h3 className="checkout-section-title"><span>3</span> Payment Details</h3>
+            <div style={{background:'rgba(201,168,76,0.07)',border:'1px solid rgba(201,168,76,0.25)',padding:'0.75rem 1rem',marginBottom:'1rem',fontSize:'0.78rem',color:'var(--gold)'}}>
+              🔒 This is a demo — no real payment is processed
+            </div>
+            <div className="form-group"><label className="form-label">Card Number *</label><input className="form-input" value={form.card} onChange={e=>upd('card',e.target.value)} placeholder="4242 4242 4242 4242" maxLength={19}/></div>
+            <div className="form-row">
+              <div className="form-group"><label className="form-label">Expiry</label><input className="form-input" value={form.expiry} onChange={e=>upd('expiry',e.target.value)} placeholder="MM/YY" maxLength={5}/></div>
+              <div className="form-group"><label className="form-label">CVV</label><input className="form-input" value={form.cvv} onChange={e=>upd('cvv',e.target.value)} placeholder="123" maxLength={3}/></div>
+            </div>
+          </div>
+          <button className="btn-gold" style={{width:'100%',padding:'18px',fontSize:'0.82rem',letterSpacing:'0.15em'}} onClick={handleOrder}>
+            Place Order · GH₵ {cartTotal.toLocaleString()}
+          </button>
+        </div>
+        <div className="order-summary">
+          <p className="order-title">Order Summary</p>
+          {cart.map(item=>(
+            <div key={item.key} className="order-item">
+              <span>{item.name} × {item.qty} <span style={{color:'var(--subtle)',fontSize:'0.75rem'}}>(Size: {item.size})</span></span>
+              <strong>GH₵ {(item.price*item.qty).toLocaleString()}</strong>
+            </div>
+          ))}
+          <hr className="order-divider"/>
+          <div className="order-item"><span>Subtotal</span><strong>GH₵ {cartTotal.toLocaleString()}</strong></div>
+          <div className="order-item"><span>Shipping</span><strong style={{color:'var(--gold)'}}>{cartTotal>=500?'Free':'GH₵ 50'}</strong></div>
+          <div className="order-item"><span>Tax (0%)</span><strong>GH₵ 0</strong></div>
+          <hr className="order-divider"/>
+          <div className="order-total"><span>Total</span><span>GH₵ {(cartTotal+(cartTotal<500?50:0)).toLocaleString()}</span></div>
+          <div style={{marginTop:'1.5rem',fontSize:'0.75rem',color:'var(--subtle)',lineHeight:1.6}}>By placing your order you agree to Élara's Terms of Service and Privacy Policy.</div>
+        </div>
+      </div>
+    </div></div>
+  );
+}
+
+/* ─── ABOUT ─── */
+function AboutPage({ setPage }) {
+  return (
+    <div className="page">
+      <div style={{textAlign:'center',padding:'5rem 2rem 4rem',borderBottom:'1px solid var(--border)',background:'var(--bg-off)',transition:'background 0.3s'}}>
+        <p className="section-eyebrow">Est. 2019 · Accra, Ghana</p>
+        <h1 style={{fontFamily:'Cormorant Garamond,serif',fontSize:'clamp(2.5rem,6vw,5rem)',fontWeight:300,color:'var(--text)',marginBottom:'1.5rem',lineHeight:1,transition:'color 0.3s'}}>
+          The <em style={{color:'var(--gold)',fontStyle:'italic'}}>Élara</em> Story
+        </h1>
+        <p style={{color:'var(--muted)',maxWidth:'560px',margin:'0 auto 2rem',lineHeight:1.9,fontSize:'0.9rem'}}>
+          Born from a passion for refined womenswear and the belief that every woman deserves to feel extraordinary in what she wears.
+        </p>
+      </div>
+      <div className="section" style={{maxWidth:'800px',margin:'0 auto'}}>
+        {[
+          {title:'Our Philosophy',body:'At Élara, we believe luxury is not just about price — it is about intention. Every piece in our collection is chosen with purpose, designed to transcend seasons and trends.'},
+          {title:'Curated with Care',body:'Each garment is personally selected by our founder from ateliers who share our commitment to quality. We partner with makers who use sustainable fabrics and ethical production methods.'},
+          {title:'Made for You',body:'Whether you are dressing for a milestone moment or elevating your everyday, Élara has something for every chapter of your story. Our team is always here to help you find your perfect piece.'},
+        ].map((s,i)=>(
+          <div key={i} style={{marginBottom:'3rem',paddingBottom:'3rem',borderBottom:'1px solid var(--border)'}}>
+            <p style={{fontSize:'0.65rem',letterSpacing:'0.25em',textTransform:'uppercase',color:'var(--gold)',marginBottom:'0.75rem'}}>0{i+1}</p>
+            <h2 style={{fontFamily:'Cormorant Garamond,serif',fontSize:'1.8rem',fontWeight:300,color:'var(--text)',marginBottom:'1rem',transition:'color 0.3s'}}>{s.title}</h2>
+            <p style={{color:'var(--muted)',lineHeight:1.9,fontSize:'0.9rem'}}>{s.body}</p>
+          </div>
+        ))}
+        <div style={{textAlign:'center',marginTop:'2rem'}}><button className="btn-gold" onClick={() => setPage('shop')}>Explore the Collection</button></div>
+      </div>
+      <Footer setPage={setPage}/>
+    </div>
+  );
+}
+
+/* ─── FOOTER ─── */
+function Footer({ setPage }) {
+  return (
+    <footer className="footer">
+      <div className="footer-inner">
+        <div>
+          <div className="footer-logo">Élara Boutique</div>
+          <p className="footer-about">Luxury womenswear curated for the modern woman. Based in Accra, Ghana — shipping nationwide.</p>
+        </div>
+        <div><p className="footer-heading">Shop</p><ul className="footer-links">{CATEGORIES.filter(c=>c!=='All').map(c=><li key={c} onClick={()=>setPage('shop')}>{c}</li>)}</ul></div>
+        <div><p className="footer-heading">Help</p><ul className="footer-links"><li>Sizing Guide</li><li>Returns</li><li>Shipping</li><li>FAQ</li><li>Contact Us</li></ul></div>
+        <div><p className="footer-heading">Follow Us</p><ul className="footer-links"><li>Instagram</li><li>TikTok</li><li>Pinterest</li><li>Facebook</li></ul></div>
+      </div>
+      <div className="footer-bottom">
+        <span className="footer-copy">© 2025 Élara Boutique. All rights reserved.</span>
+        <div className="footer-cards">{['Visa','MTN','Vodafone','Mastercard'].map(c=><span key={c} className="card-chip">{c}</span>)}</div>
+      </div>
+    </footer>
+  );
+}
+
+/* ─── APP ─── */
+function App() {
+  const [page, setPage] = useState('home');
+  const [cartOpen, setCartOpen] = useState(false);
+  const [productDetail, setProductDetail] = useState(null);
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => { window.scrollTo(0,0); }, [page]);
+
+  useEffect(() => {
+    if (dark) { document.body.classList.add('dark'); }
+    else { document.body.classList.remove('dark'); }
+  }, [dark]);
+
+  const toggleDark = () => setDark(d => !d);
+
+  return (
+    <CartProvider>
+      <style>{css}</style>
+      <Navbar page={page} setPage={setPage} openCart={() => setCartOpen(true)} dark={dark} toggleDark={toggleDark}/>
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} setPage={setPage}/>
+      {page==='home' && <HomePage setPage={setPage} setProductDetail={setProductDetail}/>}
+      {page==='shop' && <ShopPage setPage={setPage} setProductDetail={setProductDetail}/>}
+      {page==='product' && productDetail && <ProductPage product={productDetail} setPage={setPage} setProductDetail={setProductDetail}/>}
+      {page==='checkout' && <CheckoutPage setPage={setPage}/>}
+      {page==='about' && <AboutPage setPage={setPage}/>}
+    </CartProvider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
